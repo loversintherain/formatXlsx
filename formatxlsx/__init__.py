@@ -1,7 +1,6 @@
 import logging
 import os.path
 import re
-from multiprocessing.pool import Pool
 from os import walk
 from os.path import exists, isfile, isdir, join
 
@@ -46,16 +45,9 @@ class FMTXlsx(object):
                     if final_file.endswith(self.suffix) and isfile(final_file):
                         self.file_names.append(final_file)
 
-    """将格式保存到所有的xlsx文件中"""
+    """将格式保存到xlsx文件中"""
 
-    def fmt_save(self):
-        p = Pool(4)
-        for xlsx in self.file_names:
-            p.apply_async(self.fmt, args=(xlsx,))
-        p.close()
-        p.join()
-
-    def fmt(self, file_name):
+    def fmt(self, file_name) -> str:
         dims = {}
         wb = openpyxl.load_workbook(file_name)
         for sheet in wb.sheetnames:
@@ -72,14 +64,15 @@ class FMTXlsx(object):
                         # 遍历整个表格，把该列所有的单元格文本进行长度对比，找出最长的单元格
                         # 在对比单元格文本时需要将中文字符识别为1.7个长度，英文字符识别为1个，这里只需要将文本长度直接加上中文字符数量即可
                         # re.findall('([\u4e00-\u9fa5])', cell.value)能够识别大部分中文字符
-                        cell_len = 0.7 * len(re.findall('([\u4e00-\u9fa5])', str(cell.value))) + len(str(cell.value))
+                        cell_len = 0.8 * len(re.findall('([\u4e00-\u9fa5])', str(cell.value))) + len(str(cell.value))
                         dims[cell.column] = max((dims.get(cell.column, 0), cell_len))
             for col, value in dims.items():
-                # 设置列宽，get_column_letter用于获取数字列号对应的字母列号，最后值+2是用来调整最终效果的
-                value = 55 if value > 55 else value
-                ws.column_dimensions[get_column_letter(col)].width = value + 2
+                # 设置列宽，get_column_letter用于获取数字列号对应的字母列号，最后值+4是用来调整最终效果的
+                value = 70 if value > 70 else value
+                ws.column_dimensions[get_column_letter(col)].width = value + 4
         if not self.over_name:
             d, f = os.path.split(file_name)
             f = self.repl.sub(self.repl_suffix, f)
             file_name = os.path.join(d, f)
         wb.save(file_name)
+        return file_name
