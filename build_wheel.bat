@@ -1,3 +1,4 @@
 @echo off
-.\\venv\\Scripts\\python.exe setup.py bdist_wheel
+pipenv install wheel
+pipenv run python.exe setup.py bdist_wheel
 pause
